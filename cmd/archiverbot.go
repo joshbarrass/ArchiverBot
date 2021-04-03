@@ -53,8 +53,9 @@ func main() {
 			msg.ParseMode = tgbotapi.ModeMarkdown
 			bot.Send(msg)
 			continue
+		} else if update.Message.From.ID != config.Admin {
+			continue
 		}
-
 		if update.Message.IsCommand() {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 			msg.ReplyToMessageID = update.Message.MessageID
