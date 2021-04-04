@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joshbarrass/ArchiverBot/internal"
@@ -13,7 +16,10 @@ type Configuration struct {
 	BotToken  string `envconfig:"BOT_TOKEN" required:"true"`
 	Admin     int    `envconfig:"ADMIN_ID" default:"0"`
 	DebugMode bool   `envconfig:"DEBUG_MODE" default:"false"`
+	OutDir    string `envconfig:"OUT_DIR" default:"./downloads"`
 }
+
+const DefaultDirMode os.FileMode = 0755
 
 // based on example from https://github.com/go-telegram-bot-api/telegram-bot-api
 func main() {
@@ -41,6 +47,21 @@ func main() {
 		logrus.Warn("No bot admin set! Bot will not function until an admin is set.")
 	}
 
+	config.OutDir, err = filepath.Abs(config.OutDir)
+	if err != nil {
+		logrus.Fatalf("Failed to make output dir absolute: %s", err)
+	}
+	if info, err := os.Stat(config.OutDir); os.IsNotExist(err) {
+		err = os.Mkdir(config.OutDir, DefaultDirMode)
+		if err != nil {
+			logrus.Fatalf("Failed to make new output dir: %s", err)
+		}
+		logrus.Infof("Made new output dir '%s'", config.OutDir)
+	} else if !info.IsDir() {
+		logrus.Fatalf("OutDir '%s' already exists and is not a directory", config.OutDir)
+	}
+	logrus.Infof("Output dir set to '%s'", config.OutDir)
+
 	for update := range updates {
 		if update.Message == nil { // ignore any non-Message Updates
 			continue
@@ -66,6 +87,22 @@ func main() {
 			switch update.Message.Command() {
 			case "start":
 				msg.Text = internal.MessageInitialStart
+			case "download":
+				arg := update.Message.CommandArguments()
+				if err := internal.DownloadAutoOutput(arg, config.OutDir, bot, update); err != nil {
+					msg.Text = fmt.Sprintf("Failed to download. Err: %s", err)
+				} else {
+					msg.Text = "Download successful!"
+				}
+			case "listdir":
+				dirs, err := ioutil.ReadDir(config.OutDir)
+				if err != nil {
+					msg.Text += fmt.Sprintf("Failed to list. Err: %s", err)
+				} else {
+					for _, f := range dirs {
+						msg.Text += f.Name() + "\n"
+					}
+				}
 			default:
 				msg.Text = "Unrecognised command!"
 			}
