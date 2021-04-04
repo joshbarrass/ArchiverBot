@@ -10,4 +10,6 @@ If you are the administrator of this bot, launch the bot with the following envi
 Once you have done so, run /start again for further setup information.`
 
 	MessageInitialStart string = `Congratulations! You are registered as the admin for this bot! This message will eventually tell you how to setup command completion and give you a short overview of how the bot works. The bot is currently under development, so watch this space.`
+
+	MessageIsNotAdmin string = `Sorry, you are not an administrator for this bot. If you would like to set up your own bot, see https://www.github.com/joshbarrass/ArchiverBot`
 )
