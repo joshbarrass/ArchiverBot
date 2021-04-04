@@ -9,22 +9,9 @@ RUN echo $(python3 --version)
 
 WORKDIR /code
 
-COPY cmd/ /code/ArchiverBot/cmd/
-COPY internal/ /code/ArchiverBot/internal/
-COPY pkg/ /code/ArchiverBot/pkg/
-COPY go.mod /code/ArchiverBot/go.mod
-COPY go.sum /code/ArchiverBot/go.sum
-COPY LICENSE /code/ArchiverBot/LICENSE
-
 RUN addgroup --gid 10001 --system nonroot && adduser -u 10000 --system --gid 10001 --home /home/nonroot nonroot
 
 USER nonroot
-
-# build bot
-WORKDIR /code/ArchiverBot/
-RUN GO111MODULES=on go build -o /home/nonroot/ArchiverBot ./cmd/archiverbot.go 
-
-ENTRYPOINT ["/sbin/tini", "--", "/home/nonroot/ArchiverBot"]
 
 WORKDIR /home/nonroot
 RUN  git clone https://github.com/joshbarrass/UArchiver \
@@ -36,4 +23,18 @@ ENV PATH /home/nonroot/.local/bin:$PATH
 # confirm uarchiver is installed on PATH
 RUN uarchiver --version
 
+COPY cmd/ /code/ArchiverBot/cmd/
+COPY internal/ /code/ArchiverBot/internal/
+COPY pkg/ /code/ArchiverBot/pkg/
+COPY go.mod /code/ArchiverBot/go.mod
+COPY go.sum /code/ArchiverBot/go.sum
+COPY LICENSE /code/ArchiverBot/LICENSE
+
+# build bot
+WORKDIR /code/ArchiverBot/
+RUN GO111MODULES=on go build -o /home/nonroot/ArchiverBot ./cmd/archiverbot.go
+
+WORKDIR /home/nonroot
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/home/nonroot/ArchiverBot"]
 CMD []
