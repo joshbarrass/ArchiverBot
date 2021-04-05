@@ -60,6 +60,15 @@ func main() {
 	} else if !info.IsDir() {
 		logrus.Fatalf("OutDir '%s' already exists and is not a directory", config.OutDir)
 	}
+
+	// check perms are available in the output dir
+	if !internal.TestReadPermission(config.OutDir) {
+		logrus.Fatalf("No read permissions for output dir '%s'", config.OutDir)
+	}
+	if !internal.TestWritePermission(config.OutDir) {
+		logrus.Fatalf("No write permissions for output dir '%s'", config.OutDir)
+	}
+
 	logrus.Infof("Output dir set to '%s'", config.OutDir)
 
 	for update := range updates {
@@ -95,12 +104,13 @@ func main() {
 					msg.Text = "Download successful!"
 				}
 			case "listdir":
+				msg.Text = fmt.Sprintf("Content of '%s':", config.OutDir)
 				dirs, err := ioutil.ReadDir(config.OutDir)
 				if err != nil {
 					msg.Text += fmt.Sprintf("Failed to list. Err: %s", err)
 				} else {
 					for _, f := range dirs {
-						msg.Text += f.Name() + "\n"
+						msg.Text += "\n" + f.Name()
 					}
 				}
 			default:

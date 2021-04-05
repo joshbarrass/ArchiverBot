@@ -38,3 +38,6 @@ WORKDIR /home/nonroot
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/home/nonroot/ArchiverBot"]
 CMD []
+
+ENV AB_OUT_DIR=/downloads
+VOLUME /downloads
