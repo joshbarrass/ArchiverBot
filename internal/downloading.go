@@ -79,11 +79,11 @@ func DownloadAutoOutput(url, outdir string, bot *tgbotapi.BotAPI, update tgbotap
 
 // BotLogger logs stdout and stderr at end of context
 func BotErrorLogger(ctx context.Context, stdout, stderr uarchiver.StdPipe, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	<-ctx.Done()
-	allError := []byte{}
-	allError, _ = ioutil.ReadAll(stderr)
 	allOut := []byte{}
-	allOut, _ = ioutil.ReadAll(stdout)
+	go func() { allOut, _ = ioutil.ReadAll(stdout) }()
+	allError := []byte{}
+	go func() { allError, _ = ioutil.ReadAll(stderr) }()
+	<-ctx.Done()
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 	msg.ReplyToMessageID = update.Message.MessageID
 	if len(allOut) > 0 {
