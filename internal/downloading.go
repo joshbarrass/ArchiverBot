@@ -1,13 +1,16 @@
 package internal
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joshbarrass/ArchiverBot/pkg/uarchiver"
+	"github.com/sirupsen/logrus"
 )
 
 func DownloadAuto(url, outdir string) error {
@@ -84,13 +87,36 @@ func BotErrorLogger(ctx context.Context, stdout, stderr uarchiver.StdPipe, bot *
 	allError := []byte{}
 	go func() { allError, _ = ioutil.ReadAll(stderr) }()
 	<-ctx.Done()
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
-	msg.ReplyToMessageID = update.Message.MessageID
-	if len(allOut) > 0 {
-		msg.Text += string(allOut)
+
+	bufOut := bytes.NewReader(allOut)
+	bufErr := bytes.NewReader(allError)
+
+	lastMsgID := update.Message.MessageID
+
+	for _, reader := range [2]io.Reader{bufOut, bufErr} {
+		buf := make([]byte, 4096)
+		n, err := reader.Read(buf)
+		if err == nil {
+			for n > 0 {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, string(buf[:n]))
+				msg.ReplyToMessageID = lastMsgID
+
+				var sentMsg tgbotapi.Message
+				sentMsg, err = bot.Send(msg)
+				if err != nil {
+					logrus.Errorf("Failed to send: %s", err)
+					break
+				}
+				lastMsgID = sentMsg.MessageID
+
+				n, err = reader.Read(buf)
+				if err != nil {
+					logrus.Errorf("Failed to read buffer: %s", err)
+					break
+				}
+			}
+		} else {
+			logrus.Errorf("Failed to read buffer: %s", err)
+		}
 	}
-	if len(allError) > 0 {
-		msg.Text += "\n\n" + string(allError)
-	}
-	bot.Send(msg)
 }
