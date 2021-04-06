@@ -2,7 +2,7 @@ FROM golang:1.14-buster
 
 # install packages
 RUN  apt-get update \
-  && apt-get install -y tini git python3 python3-pip \
+  && apt-get install -y tini git python3 python3-pip ffmpeg \
   && rm -rf /var/lib/apt/lists/*
 
 RUN echo $(python3 --version)
