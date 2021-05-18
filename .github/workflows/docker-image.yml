@@ -19,9 +19,12 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+        
+    - name: Extract release version
+      run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_USERNAME }}/archiverbot:${{GITHUB_REF}} --tag ${{ secrets.DOCKER_HUB_USERNAME }}/archiverbot:latest
+      run: docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_USERNAME }}/archiverbot:$RELEASE_VERSION --tag ${{ secrets.DOCKER_HUB_USERNAME }}/archiverbot:latest
       
     - name: Push the image to Docker Hub
-      run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/archiverbot:${{GITHUB_REF}} && docker push ${{ secrets.DOCKER_HUB_USERNAME }}/archiverbot:latest
+      run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/archiverbot:$RELEASE_VERSION && docker push ${{ secrets.DOCKER_HUB_USERNAME }}/archiverbot:latest
