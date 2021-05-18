@@ -13,15 +13,15 @@ RUN addgroup --gid 10001 --system nonroot && adduser -u 10000 --system --gid 100
 
 USER nonroot
 
+COPY requirements.txt /code/requirements.txt
+
 WORKDIR /home/nonroot
-RUN  git clone https://github.com/joshbarrass/UArchiver \
-  && pip3 install -r /home/nonroot/UArchiver/requirements.txt \
-  && pip3 install /home/nonroot/UArchiver
+RUN  pip3 install -r /code/requirements.txt
 
 ENV PATH /home/nonroot/.local/bin:$PATH
 
 # confirm uarchiver is installed on PATH
-RUN uarchiver --version
+RUN echo "Installed UArchiver version $(uarchiver --version)"
 
 COPY cmd/ /code/ArchiverBot/cmd/
 COPY internal/ /code/ArchiverBot/internal/
